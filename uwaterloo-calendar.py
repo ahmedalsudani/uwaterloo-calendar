@@ -5,12 +5,14 @@ from json import loads as read_json
 import re
 from icalendar import Calendar, Event
 import datetime
+from pytz import timezone
 
 app = Flask(__name__)
 
 KEY = environ.get('UWATERLOO_KEY')
 uwaterloo = Hammock('https://api.uwaterloo.ca/v2')
 params = {'key': KEY}
+tz = timezone('Canada/Eastern')
 
 DAYS_NUMBERED = {
     'M': 0,
@@ -26,8 +28,8 @@ DAYS = {
     'W': 'Wednesday',
     'F': 'Friday'
 }
-TERM_START = '20140908T000000'
-TERM_END = '20141201T000000'
+TERM_START = datetime.date(2014, 9, 8)
+TERM_END = datetime.date(2014, 12, 1)
 COURSE_FIELDS = ['catalog_number', 'subject', 'section']
 SECTION_FIELDS = ['instructors', 'location']
 DATE_FIELDS = ['weekdays', 'start_time', 'end_time']
@@ -36,14 +38,14 @@ DATE_FIELDS = ['weekdays', 'start_time', 'end_time']
 # Per http://stackoverflow.com/a/6558571
 def next_weekday(d, weekday):
     days_ahead = weekday - d.weekday()
-    if days_ahead <= 0: # Target day already happened this week
+    if days_ahead <= 0:  # Target day already happened this week
         days_ahead += 7
     return d + datetime.timedelta(days_ahead)
 
 
-def split_days(raw_days, map=DAYS):
+def split_days(raw_days, day_map=DAYS):
     day_codes = re.findall(r'[A-Z][a-z]?', raw_days)
-    days = [map[i] for i in day_codes]
+    days = [day_map[i] for i in day_codes]
     return days
 
 
@@ -60,8 +62,12 @@ def extract_class_info(raw_class):
         c[i] = date[i]
 
     c['days'] = split_days(c['weekdays'])
-    c['days_numbered'] = split_days(c['weekdays'], map=DAYS_NUMBERED)
-    c['parsed_instructors'] = ""
+    c['days_numbered'] = split_days(c['weekdays'], day_map=DAYS_NUMBERED)
+    c['start_hour'] = int(re.search(r'^\d+', c['start_time']).group())
+    c['end_hour'] = int(re.search(r'^\d+', c['end_time']).group())
+    c['start_minute'] = int(re.search(r'\d+$', c['start_time']).group())
+    c['end_minute'] = int(re.search(r'\d+$', c['end_time']).group())
+    c['parsed_instructors'] = ''
     for i in c['instructors']:
         c['parsed_instructors'] += i
     return c
@@ -80,20 +86,20 @@ def schedule_by_classnum(classnum):
 
 def create_calendar(classes):
     cal = Calendar()
-    cal['dtstart'] = TERM_START + 'Z'
-    cal['dtend'] = TERM_END + 'Z'
+    cal['dtstart'] = TERM_START
+    cal['dtend'] = TERM_END
     for c in classes:
         for day in c['days_numbered']:
             e = Event()
-            e['summary'] = c['subject'] + " " + c['catalog_number'] + " " + c['section']
+            e['summary'] = c['subject'] + ' ' + c['catalog_number'] + ' ' + c['section']
             e['description'] = 'Instructors: ' + c['parsed_instructors']
-            e['location'] = c['location']['building'] + c['location']['room']
-            first_class = next_weekday(datetime.date(2014, 9, 7), day)
-            e['dtstart'] = first_class.strftime('%Y%m%d') + 'T' + c['start_time'].replace(r':', '',) + '00Z'
-            e['dtend'] = first_class.strftime('%Y%m%d') + 'T' + c['end_time'].replace(r':', '',) + '00Z'
+            e['location'] = c['location']['building'] + ' ' + c['location']['room']
+            first_class = next_weekday(TERM_START, day)
+            e.add('dtstart', tz.localize(datetime.datetime.combine(first_class, datetime.time(c['start_hour'], c['start_minute']))))
+            e.add('dtend', tz.localize(datetime.datetime.combine(first_class, datetime.time(c['end_hour'], c['end_minute']))))
             e['uid'] = ('1149' + c['subject'] + c['catalog_number'] + c['section'] +
                         'day' + str(day) + 'v0.0.1').replace(r' ', '-')
-            e.add('rrule', {'freq': 'weekly'})
+            e.add('rrule', {'freq': 'weekly', 'until': TERM_END})
             cal.add_component(e)
     return cal.to_ical()
 
