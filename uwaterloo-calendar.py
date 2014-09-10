@@ -15,8 +15,8 @@ params = {'key': KEY}
 DAYS_NUMBERED = {
     'M': 0,
     'T': 1,
-    'Th': 2,
-    'W': 3,
+    'W': 2,
+    'Th': 3,
     'F': 4
 }
 DAYS = {
