@@ -93,7 +93,7 @@ def create_calendar(classes):
             e['dtend'] = first_class.strftime('%Y%m%d') + 'T' + c['end_time'].replace(r':', '',) + '00'
             e['uid'] = ('1149' + c['subject'] + c['catalog_number'] + c['section'] +
                         'day' + str(day) + 'v0.0.1').replace(r' ', '-')
-            e.add('rrule', {'freq': 'daily'})
+            e.add('rrule', {'freq': 'weekly'})
             cal.add_component(e)
     return cal.to_ical()
 
