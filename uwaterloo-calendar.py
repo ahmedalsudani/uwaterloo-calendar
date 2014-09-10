@@ -80,8 +80,8 @@ def schedule_by_classnum(classnum):
 
 def create_calendar(classes):
     cal = Calendar()
-    cal['dtstart'] = TERM_START
-    cal['dtend'] = TERM_END
+    cal['dtstart'] = TERM_START + 'Z'
+    cal['dtend'] = TERM_END + 'Z'
     for c in classes:
         for day in c['days_numbered']:
             e = Event()
@@ -89,8 +89,8 @@ def create_calendar(classes):
             e['description'] = 'Instructors: ' + c['parsed_instructors']
             e['location'] = c['location']['building'] + c['location']['room']
             first_class = next_weekday(datetime.date(2014, 9, 7), day)
-            e['dtstart'] = first_class.strftime('%Y%m%d') + 'T' + c['start_time'].replace(r':', '',) + '00'
-            e['dtend'] = first_class.strftime('%Y%m%d') + 'T' + c['end_time'].replace(r':', '',) + '00'
+            e['dtstart'] = first_class.strftime('%Y%m%d') + 'T' + c['start_time'].replace(r':', '',) + '00Z'
+            e['dtend'] = first_class.strftime('%Y%m%d') + 'T' + c['end_time'].replace(r':', '',) + '00Z'
             e['uid'] = ('1149' + c['subject'] + c['catalog_number'] + c['section'] +
                         'day' + str(day) + 'v0.0.1').replace(r' ', '-')
             e.add('rrule', {'freq': 'weekly'})
