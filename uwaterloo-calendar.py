@@ -1,16 +1,12 @@
 from flask import Flask, Response
 from hammock import Hammock
 from os import environ
-from json import loads as read_json, dumps as dump_json
-import csv
+from json import loads as read_json
 import re
 from icalendar import Calendar, Event
-import unicodedata
 import datetime
 
-
 app = Flask(__name__)
-
 
 KEY = environ.get('UWATERLOO_KEY')
 uwaterloo = Hammock('https://api.uwaterloo.ca/v2')
@@ -91,15 +87,15 @@ def create_calendar(classes):
             e = Event()
             e['summary'] = c['subject'] + " " + c['catalog_number'] + " " + c['section']
             e['description'] = 'Instructors: ' + c['parsed_instructors']
-            e['location'] = c['location']['building']+ c['location']['room']
+            e['location'] = c['location']['building'] + c['location']['room']
             first_class = next_weekday(datetime.date(2014, 9, 7), day)
-            e['dtstart'] = first_class.strftime('%Y%m%d') + 'T' + c['start_time'].replace(r':','',) + '00'
-            e['dtend'] = first_class.strftime('%Y%m%d') + 'T' + c['end_time'].replace(r':','',) + '00'
-            e['uid'] = ('1149' + c['subject'] + c['catalog_number'] + c['section'] + 'day' + str(day) + 'v0.0.1').replace(r' ', '-')
+            e['dtstart'] = first_class.strftime('%Y%m%d') + 'T' + c['start_time'].replace(r':', '',) + '00'
+            e['dtend'] = first_class.strftime('%Y%m%d') + 'T' + c['end_time'].replace(r':', '',) + '00'
+            e['uid'] = ('1149' + c['subject'] + c['catalog_number'] + c['section'] +
+                        'day' + str(day) + 'v0.0.1').replace(r' ', '-')
             e.add('rrule', {'freq': 'daily'})
             cal.add_component(e)
     return cal.to_ical()
-
 
 
 @app.route('/ics/<classes>')
@@ -114,7 +110,8 @@ def home(classes):
 
     calendar = create_calendar(class_info)
 
-    response = Response(response=calendar,mimetype='text/calendar', headers={'Content-Disposition': 'attachment; filename=calendar.ics'})
+    response = Response(response=calendar,mimetype='text/calendar',
+                        headers={'Content-Disposition': 'attachment; filename=calendar.ics'})
     return response
 
 
