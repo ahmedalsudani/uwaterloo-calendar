@@ -69,7 +69,11 @@ def extract_class_info(raw_class):
     c['start_minute'] = int(re.search(r'\d+$', c['start_time']).group())
     c['end_minute'] = int(re.search(r'\d+$', c['end_time']).group())
     c['parsed_instructors'] = parse_instructors(c['instructors'])
-    c['instructor'] = c['parsed_instructors'][0]
+    try:
+        c['instructor'] = c['parsed_instructors'][0]
+    except IndexError:
+        c['instructor'] = ''
+
     return c
 
 
