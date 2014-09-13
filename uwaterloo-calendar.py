@@ -23,7 +23,7 @@ DAYS_NUMBERED = {
 }
 TERM_START = datetime.date(2014, 9, 8)
 TERM_END = datetime.date(2014, 12, 2)
-COURSE_FIELDS = ['catalog_number', 'subject', 'section']
+COURSE_FIELDS = ['catalog_number', 'subject', 'section', 'class_number']
 SECTION_FIELDS = ['instructors', 'location']
 DATE_FIELDS = ['weekdays', 'start_time', 'end_time']
 
@@ -96,7 +96,7 @@ def create_calendar(classes):
         for day in c['days_numbered']:
             e = Event()
             e['summary'] = '%(subject)s %(catalog_number)s %(instructor)s %(section)s' % c
-            e['description'] = 'Instructors: ' + str(c['instructors'])
+            e['description'] = 'Instructors: %(instructors)s\nClass number:%(class_number)s' % c
             e['location'] = c['location']['building'] + ' ' + c['location']['room']
             first_class = next_weekday(TERM_START, day)
             e.add('dtstart', tz.localize(datetime.datetime.combine(first_class, datetime.time(c['start_hour'], c['start_minute']))))
