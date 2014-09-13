@@ -21,15 +21,8 @@ DAYS_NUMBERED = {
     'Th': 3,
     'F': 4
 }
-DAYS = {
-    'M': 'Monday',
-    'T': 'Tuesday',
-    'Th': 'Thursday',
-    'W': 'Wednesday',
-    'F': 'Friday'
-}
 TERM_START = datetime.date(2014, 9, 8)
-TERM_END = datetime.date(2014, 12, 1)
+TERM_END = datetime.date(2014, 12, 2)
 COURSE_FIELDS = ['catalog_number', 'subject', 'section']
 SECTION_FIELDS = ['instructors', 'location']
 DATE_FIELDS = ['weekdays', 'start_time', 'end_time']
@@ -43,10 +36,19 @@ def next_weekday(d, weekday):
     return d + datetime.timedelta(days_ahead)
 
 
-def split_days(raw_days, day_map=DAYS):
+def split_days(raw_days, day_map=DAYS_NUMBERED):
     day_codes = re.findall(r'[A-Z][a-z]?', raw_days)
     days = [day_map[i] for i in day_codes]
     return days
+
+
+def parse_instructors(instructors):
+    parsed = []
+    for i in instructors:
+        last_name, first_name = i.split(',')
+        first_initial = first_name[0]
+        parsed.append('%(first_initial)s. %(last_name)s' % locals())
+    return parsed
 
 
 def extract_class_info(raw_class):
@@ -61,15 +63,13 @@ def extract_class_info(raw_class):
     for i in DATE_FIELDS:
         c[i] = date[i]
 
-    c['days'] = split_days(c['weekdays'])
     c['days_numbered'] = split_days(c['weekdays'], day_map=DAYS_NUMBERED)
     c['start_hour'] = int(re.search(r'^\d+', c['start_time']).group())
     c['end_hour'] = int(re.search(r'^\d+', c['end_time']).group())
     c['start_minute'] = int(re.search(r'\d+$', c['start_time']).group())
     c['end_minute'] = int(re.search(r'\d+$', c['end_time']).group())
-    c['parsed_instructors'] = ''
-    for i in c['instructors']:
-        c['parsed_instructors'] += i
+    c['parsed_instructors'] = parse_instructors(c['instructors'])
+    c['instructor'] = c['parsed_instructors'][0]
     return c
 
 
@@ -91,8 +91,8 @@ def create_calendar(classes):
     for c in classes:
         for day in c['days_numbered']:
             e = Event()
-            e['summary'] = c['subject'] + ' ' + c['catalog_number'] + ' ' + c['section']
-            e['description'] = 'Instructors: ' + c['parsed_instructors']
+            e['summary'] = '%(subject)s %(catalog_number)s %(instructor)s %(section)s' % c
+            e['description'] = 'Instructors: ' + str(c['instructors'])
             e['location'] = c['location']['building'] + ' ' + c['location']['room']
             first_class = next_weekday(TERM_START, day)
             e.add('dtstart', tz.localize(datetime.datetime.combine(first_class, datetime.time(c['start_hour'], c['start_minute']))))
@@ -105,7 +105,7 @@ def create_calendar(classes):
 
 
 @app.route('/ics/<classes>')
-def home(classes):
+def ics(classes):
     class_list = parse_classes(classes)
     schedule = []
 
@@ -120,6 +120,9 @@ def home(classes):
                         headers={'Content-Disposition': 'attachment; filename=calendar.ics'})
     return response
 
+@app.route('/')
+def home():
+    return "Hi"
 
 if __name__ == '__main__':
     app.run(debug=True)
