@@ -68,6 +68,7 @@ def extract_class_info(raw_class):
     c['end_hour'] = int(re.search(r'^\d+', c['end_time']).group())
     c['start_minute'] = int(re.search(r'\d+$', c['start_time']).group())
     c['end_minute'] = int(re.search(r'\d+$', c['end_time']).group())
+    c['instructors'] = map(str, c['instructors'])
     c['parsed_instructors'] = parse_instructors(c['instructors'])
     try:
         c['instructor'] = c['parsed_instructors'][0]
