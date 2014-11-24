@@ -83,9 +83,9 @@ def parse_classes(classes):
     return list_of_classes
 
 
-def schedule_by_classnum(classnum):
+def schedule_by_classnum(term, classnum):
     course = uwaterloo.courses(classnum)('schedule.json')
-    response = course.GET(params=params)
+    response = course.GET(params=dict(params.items() + [('term', term)]))
     return read_json(response.text)['data']
 
 
@@ -109,13 +109,13 @@ def create_calendar(classes):
     return cal.to_ical()
 
 
-@app.route('/ics/<classes>')
-def ics(classes):
+@app.route('/ics/<term>/<classes>')
+def ics(term, classes):
     class_list = parse_classes(classes)
     schedule = []
 
     for c in class_list:
-        schedule += schedule_by_classnum(c)
+        schedule += schedule_by_classnum(term, c)
 
     class_info = map(extract_class_info, schedule)
 
