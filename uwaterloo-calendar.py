@@ -23,8 +23,17 @@ DAYS_NUMBERED = {
     'Th': 3,
     'F': 4
 }
-TERM_START = datetime.date(2014, 9, 8)
-TERM_END = datetime.date(2014, 12, 2)
+
+TERMS = {
+    1149: {
+        'start': datetime.date(2014, 9, 8),
+        'end': datetime.date(2014, 12, 2)
+    },
+    1151: {
+        'start': datetime.date(2015, 1, 5),
+        'end': datetime.date(2015, 4, 7)
+    }
+}
 COURSE_FIELDS = ['catalog_number', 'subject', 'section', 'class_number']
 SECTION_FIELDS = ['instructors', 'location']
 DATE_FIELDS = ['weekdays', 'start_time', 'end_time']
@@ -94,27 +103,29 @@ def schedule_by_classnum(term, classnum):
 def create_calendar(term, classes):
     digest = sha1(str(term) + str(classes)).hexdigest()
     name = humanize(digest, words=3)
+    term_start = TERMS[term]['start']
+    term_end = TERMS[term]['end']
     cal = Calendar(name=name)
     cal.add('x-wr-calname', name)
-    cal['dtstart'] = TERM_START
-    cal['dtend'] = TERM_END
+    cal['dtstart'] = term_start
+    cal['dtend'] = term_end
     for c in classes:
         for day in c['days_numbered']:
             e = Event()
             e['summary'] = '%(subject)s %(catalog_number)s %(instructor)s %(section)s' % c
             e['description'] = 'Instructors: %(instructors)s\nClass number:%(class_number)s' % c
             e['location'] = c['location']['building'] + ' ' + c['location']['room']
-            first_class = next_weekday(TERM_START, day)
+            first_class = next_weekday(term_start , day)
             e.add('dtstart', tz.localize(datetime.datetime.combine(first_class, datetime.time(c['start_hour'], c['start_minute']))))
             e.add('dtend', tz.localize(datetime.datetime.combine(first_class, datetime.time(c['end_hour'], c['end_minute']))))
             e['uid'] = ('1149' + c['subject'] + c['catalog_number'] + c['section'] +
                         'day' + str(day) + 'v0.0.1').replace(r' ', '-')
-            e.add('rrule', {'freq': 'weekly', 'until': TERM_END})
+            e.add('rrule', {'freq': 'weekly', 'until': term_end})
             cal.add_component(e)
     return cal.to_ical()
 
 
-@app.route('/ics/<term>/<classes>')
+@app.route('/ics/<int:term>/<classes>')
 def ics(term, classes):
     class_list = parse_classes(classes)
     schedule = []
