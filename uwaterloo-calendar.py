@@ -95,6 +95,7 @@ def create_calendar(term, classes):
     digest = sha1(str(term) + str(classes)).hexdigest()
     name = humanize(digest, words=3)
     cal = Calendar(name=name)
+    cal.add('x-wr-calname', name)
     cal['dtstart'] = TERM_START
     cal['dtend'] = TERM_END
     for c in classes:
