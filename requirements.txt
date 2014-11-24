@@ -2,3 +2,4 @@ hammock
 Flask
 icalendar
 gunicorn
+humanhash

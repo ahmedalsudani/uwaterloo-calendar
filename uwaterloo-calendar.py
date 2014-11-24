@@ -6,6 +6,8 @@ import re
 from icalendar import Calendar, Event
 import datetime
 from pytz import timezone
+from humanhash import humanize
+from hashlib import sha1
 
 app = Flask(__name__)
 
@@ -89,8 +91,10 @@ def schedule_by_classnum(term, classnum):
     return read_json(response.text)['data']
 
 
-def create_calendar(classes):
-    cal = Calendar()
+def create_calendar(term, classes):
+    digest = sha1(str(term) + str(classes)).hexdigest()
+    name = humanize(digest, words=3)
+    cal = Calendar(name=name)
     cal['dtstart'] = TERM_START
     cal['dtend'] = TERM_END
     for c in classes:
@@ -119,7 +123,7 @@ def ics(term, classes):
 
     class_info = map(extract_class_info, schedule)
 
-    calendar = create_calendar(class_info)
+    calendar = create_calendar(term, class_info)
 
     response = Response(response=calendar,mimetype='text/calendar',
                         headers={'Content-Disposition': 'attachment; filename=calendar.ics'})
