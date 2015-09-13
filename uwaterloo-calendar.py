@@ -32,6 +32,10 @@ TERMS = {
     1151: {
         'start': datetime.date(2015, 1, 5),
         'end': datetime.date(2015, 4, 7)
+    },
+    1159: {
+        'start': datetime.date(2015,9,14),
+        'end': datetime.date(2015, 12, 5)
     }
 }
 COURSE_FIELDS = ['catalog_number', 'subject', 'section', 'class_number']
